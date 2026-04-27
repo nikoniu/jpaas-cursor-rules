@@ -1,5 +1,5 @@
 ---
-description: playmore-摩登格格-pms-server 后端约定（Java / Spring Boot / MyBatis-Plus / Gradle 多模块）
+description: jpaas-pms-server 后端约定
 globs: "**/*.{java,gradle,kts,yml,yaml,sql}"
 alwaysApply: false
 ---
