@@ -1,0 +1,69 @@
+---
+description: playmore-摩登格格-pms-server 后端约定（Java / Spring Boot / MyBatis-Plus / Gradle 多模块）
+globs: "**/*.{java,gradle,kts,yml,yaml,sql}"
+alwaysApply: false
+---
+
+# 后端开发规范（jpaas-pms-server）
+
+## 工程与模块
+
+- **构建**：Gradle 多模块，根工程 `settings.gradle` 中声明子模块（如 `jpaas-crm`、`jpaas-pms-server-web`、`jpaas-common-custom` 等）。
+- **业务扩展**：CRM 相关代码优先落在 **`jpaas-crm`**；Web 入口与全局配置在 **`jpaas-pms-server-web`**。
+- **依赖**：子模块通过 `api` / `implementation` 引用公共模块；与周边文件保持同一依赖声明风格。
+
+## 分层与命名
+
+- **包名**：`com.jpaas.*`，按领域划分子包（如 `com.jpaas.crm.customer`）。
+- **控制器**：`controller.manager` 下 `*Controller`，类上 `@RestController`、`@RequestMapping`（管理端路径多与 `/manager/...` 对齐），使用 **`@RequiredArgsConstructor`** 构造注入。
+- **服务**：接口 `I*Service`，实现 `*ServiceImpl`，继承或组合 MyBatis-Plus `ServiceImpl` 等现有基类。
+- **数据访问**：`*Mapper` 接口，继承项目统一的 `BaseMapper` 用法。
+- **模型**：
+  - 请求：`model.req.*Req`（含分页查询 `*PageQueryReq`），继承项目内 `JpaasTenantReq` / `JpaasTenantPageQueryReq` 等基类。
+  - 响应视图：`model.vo.*VO`、简要信息 `*BriefVO`。
+  - 持久化实体：`model.entity.*`，与表字段一致。
+  - 转换：`model.convert.*Convert`（`@Component`），负责 Entity ↔ VO / Req，避免在 Controller 中堆叠映射逻辑。
+  - 目录约束：`convert` 必须放在 `model` 下（即 `model.convert`），不要新增顶层 `*.convert` 包。
+
+## HTTP 与响应
+
+- 管理端接口多为 **`@PostMapping`**，`@RequestBody` 配合 **`@Valid`**。
+- 统一返回 **`JpaasResponse`**；承载业务数据时使用 **`ApiData`**（如分页 `IPage`、列表、单对象）。
+- 使用 **OpenAPI**：类上 `@Tag`，方法上 `@Operation(summary = "...")`。
+
+## JSON 与前后端字段
+
+- 全局 Jackson 命名策略为 **大驼峰（UPPER_CAMEL_CASE）** 时，DTO 在 JSON 中与前端约定 **PascalCase** 字段名（如 `Id`、`ActivityName`），新增接口时勿擅自改为小驼峰导致联调不一致。
+- **Long 主键**：JSON 传输时前端常按字符串处理；后端保持 `Long` 即可，文档中说明精度约定。
+
+## 持久化与 SQL
+
+- 条件构造优先 **`LambdaQueryWrapper`**，与实体字段引用一致，避免硬编码列名。
+- 版本化脚本与升级 SQL 放在仓库既有目录（如 **`develop/Upgrade/...`**）下，与当前版本目录结构保持一致；新增表/字段时同步维护对应 SQL。
+
+## 注释（中文 Javadoc）
+
+- **适用范围**：新增或修改 **成员属性（字段）**、**方法**（含接口方法、实现类方法）时，均须补充 **中文说明**。
+- **格式**：使用标准 Javadoc 块注释，缩进与声明一致；正文一行概括职责或含义，示例如下：
+
+```java
+    /**
+     * 客户转换器
+     */
+```
+
+- **写法**：`/**` 与 `*/` 单独成行；中间行以 ` * ` 开头，内容为简洁中文（无需 `@param` / `@return` 时可省略，与现有 `jpaas-crm` 风格保持一致即可）。
+- 已有代码若无注释，在**本次改动触及**该属性或方法时一并补全，避免只改逻辑不加说明。
+
+## 代码风格与改动范围
+
+- 使用 **Lombok**（`@Data`、`@RequiredArgsConstructor` 等）与现有类一致。
+- **改动范围**：仅包含任务所需文件与逻辑，不做无关重构；注释须符合上文 **「注释（中文 Javadoc）」** 并与周边文件风格一致。
+- 异常与错误码使用项目内 **`JCrmErrorCode`** 或公共模块既有模式，不引入另一套错误封装。
+
+## 本地校验
+
+- 修改后在本机执行模块编译或全量构建（如 `./gradlew :jpaas-crm:compileJava` 或根工程 `build`），确保无编译错误后再提交。
+
+## Git 日志
+- Git 提交与推送前，commit message 使用中文，清晰说明改动目的与范围。

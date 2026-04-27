@@ -1,0 +1,44 @@
+---
+description: jpaas-pms-web 前端开发约定（Vue 3 / TS / Ant Design Vue）
+globs: "**/*.{vue,ts,tsx}"
+alwaysApply: false
+---
+
+# 前端开发规范（jpaas-pms-web）
+
+## 技术栈与结构
+
+- 使用 **Vue 3**、**`<script setup lang="ts">`**（或项目既有写法），组合式 API。
+- UI 使用 **ant-design-vue**，组件前缀与现有页面一致（如 `a-form`、`a-table`）。
+- 状态用 **Pinia**；路由用 **vue-router**。
+- 业务模块放在 `src/__sys_modules/**`：接口、类型、视图与现有目录对齐（如 `api/`、`types/`、`views/`）。
+
+## 与后端类型对齐（Long / Id）
+
+- 后端为 **Long** 的 **Id**（及同类主键、外键）经 JSON 序列化后在前端为 **字符串**。在 `types/`、接口入参/出参、组件 props 中应声明为 **`string`**，**禁止**声明为 **`number`**，避免精度丢失与运行时类型不一致。
+
+## 代码风格
+
+- 新增逻辑与周边文件保持同一命名、导入顺序和缩进风格；改动的 diff 只包含任务所需内容。
+- 表单/列表字段名若与后端 DTO 一致，保持现有 **PascalCase** 等约定，不要随意改成 camelCase 导致联调不一致。
+- 优先抽离可复用逻辑（composables、小函数），避免在单个 `.vue` 里堆过长过程式代码。
+
+## 质量
+
+- 提交前本地可运行：`npm run lint`（必要时 `npm run format`），尽量零 warning。
+- 类型：为新 API 与组件 props 补充类型；避免滥用 `any`，必要时用明确类型或 `unknown` + 收窄。
+- Git 提交与推送前，commit message 使用中文，清晰说明改动目的与范围。
+
+## 📁 目录结构规范
+
+```
+[模块名]/
+├── api/            # API 接口层
+├── stores/         # Pinia 状态管理
+├── types/          # TypeScript 类型定义
+├── utils/          # 工具函数
+└── views/          # 页面视图
+    ├── [业务模块名]/
+    │   ├── components/    # 模块私有组件
+    │   └── [业务名]List.vue  # 列表页面
+```
